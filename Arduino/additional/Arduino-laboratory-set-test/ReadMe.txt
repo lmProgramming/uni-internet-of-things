@@ -1,0 +1,4 @@
+Used libraries:
+DallasTemperature
+LiquidCrystal_I2C
+OneWire
