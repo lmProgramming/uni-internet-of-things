@@ -5,6 +5,16 @@
 #define RED_BUTTON 2
 #define GREEN_BUTTON 4
 
+/*
+Napisz program, który będzie migał trzema kolorami diody RGB.
+
+Każdy kolor diody ma mieć zmienny czas migania wyrażony w milisekundach.
+Program startuje z czasami R-0,9s, G-1,0s, B-1,1s.
+Proszę wykorzystać przyciski do zmiany wartości czasów migania. Można przyjąć, że przycisk czerwony wybiera aktualną diodę do zmiany wartości, a zielony zmienia wartość migania cyklicznie w przedziale 0,5s - 2,0s z krokiem co 0,1s.
+Aktualna nastawa czasu jest wyświetlana na wyświetlaczu LCD.
+Program przygotować tak, aby nie blokować przełączania diod wzajemnie, nie blokować wykonania programu.
+*/
+
 int led[] = {LED_RED, LED_GREEN, LED_BLUE};
 
 void initRGB()
