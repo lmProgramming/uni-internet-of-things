@@ -44,12 +44,13 @@ void initLCD()
     lcd.backlight();
 }
 
-void blink(int times){    
+void blink(int times)
+{    
     for (int i = 0; i < times; i++)
     {
-        digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
-        delay(100);                      // wait for a second
-        digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
+        digitalWrite(LED_BUILTIN, HIGH); 
+        delay(100);                      
+        digitalWrite(LED_BUILTIN, LOW);  
         delay(900);
     }
 }
@@ -93,5 +94,5 @@ void loop()
     lcd.setCursor(0, 0);
     lcd.print(counter);
 
-    delay(10);
+    delay(50);
 }
