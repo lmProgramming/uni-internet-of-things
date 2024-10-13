@@ -9,7 +9,7 @@ diody tyle razy ile wynosi aktualna wartość licznika. Odpowiedni komunikat wy�
 Monitor. Wartość licznika w trakcie obsługi wciśnięcia obu przycisków nie powinna ulec zmianie.
 Należy zadbać o pozbycie się drgań z przycisków
 */
-
+#include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 
 #define LED_RED 6
