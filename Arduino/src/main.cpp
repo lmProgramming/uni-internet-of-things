@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <LiquidCrystal_I2C.h>
 
 #define LED_RED 6
 #define LED_GREEN 5
@@ -7,22 +8,28 @@
 #define RED_BUTTON 2
 #define GREEN_BUTTON 4
 
-// Napisz program, który w reakcji na przyciski będzie rozjaśniał i ściemniał wybraną diodę. 
-// Na przykład, dioda zielona, po przytrzymaniu przycisku zielonego, będzie rozjaśniała się, 
-// a po przytrzymaniu czerwonego będzie ściemniała się.
+/*
+Napisz program,  który wykorzysta oba przyciski do zwiększania/zmniejszania pewnego licznika.
 
-int chosen_diode = LED_GREEN;
-int intensity = 122;
+Licznik startuje z wartością 0.
+Naciśnięcie przycisku zielonego zwiększa licznik o 1 i wyświetla aktualną wartość na Serial Monitor.
+Naciśnięcie przycisku czerwonego zmniejsza licznik o 1 i wyświetla aktualną wartość na Serial Monitor.
+Program powinien obsługiwać także wciśnięcie obu przycisków na raz, co sygnalizowane będzie mignięciem 
+diody tyle razy ile wynosi aktualna wartość licznika. Odpowiedni komunikat wyświetli się także na Serial 
+Monitor. Wartość licznika w trakcie obsługi wciśnięcia obu przycisków nie powinna ulec zmianie.
+Należy zadbać o pozbycie się drgań z przycisków
+*/
 
-int DELAY = 15;
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+int counter = 0;
+bool pressing_red = false;
+bool pressing_green = false; 
 
 void initRGB()
 {
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
-
-    pinMode(chosen_diode, OUTPUT);
-    analogWrite(chosen_diode, intensity);
 }
 
 void initButtons()
@@ -31,25 +38,60 @@ void initButtons()
     pinMode(GREEN_BUTTON, INPUT_PULLUP);
 }
 
+void initLCD()
+{
+    lcd.init();
+    lcd.backlight();
+}
+
+void blink(int times){    
+    for (int i = 0; i < times; i++)
+    {
+        digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
+        delay(100);                      // wait for a second
+        digitalWrite(LED_BUILTIN, LOW);  // turn the LED off by making the voltage LOW
+        delay(900);
+    }
+}
+
 void setup()
 {
     initRGB();
+
     initButtons();
+    
+    initLCD();
+}
+
+void check_button(int first_button, int second_button, int counter_change)
+{
+    if (digitalRead(first_button) == LOW)
+    {
+        while (digitalRead(first_button) == LOW)
+        {
+            if (digitalRead(second_button) == LOW)
+            {
+                blink(counter);
+                if (counter <= 0)
+                {
+                    delay(100);
+                }
+                return;
+            }
+        }
+
+        counter += counter_change;
+    }
 }
 
 void loop()
 {
-    if (digitalRead(GREEN_BUTTON) == LOW && intensity > 0)
-    {
-        intensity--;
-        analogWrite(chosen_diode, intensity);
-        delay(DELAY);
-    }
+    check_button(GREEN_BUTTON, RED_BUTTON, 1);
+    check_button(RED_BUTTON, GREEN_BUTTON, -1);
 
-    if (digitalRead(RED_BUTTON) == LOW && intensity < 255)
-    {
-        intensity++;
-        analogWrite(chosen_diode, intensity);
-        delay(DELAY);
-    }
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(counter);
+
+    delay(10);
 }

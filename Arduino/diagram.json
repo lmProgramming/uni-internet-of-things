@@ -1,34 +1,65 @@
 {
   "version": 1,
-  "author": "Anonymous maker",
+  "author": "Wasloso",
   "editor": "wokwi",
   "parts": [
-    { "type": "wokwi-arduino-uno", "id": "uno", "top": 0, "left": 0, "attrs": {} },
-    { "type": "wokwi-rgb-led", "id": "rgb1", "top": 23.2, "left": -75.7, "attrs": {} },
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 10.2, "left": 28.2, "attrs": {} },
+    {
+      "type": "wokwi-rgb-led",
+      "id": "rgb1",
+      "top": -72.8,
+      "left": 289.1,
+      "attrs": { "common": "cathode" }
+    },
     {
       "type": "wokwi-pushbutton",
       "id": "btn1",
-      "top": 92.6,
-      "left": -134.4,
-      "attrs": { "color": "red" }
+      "top": -41.8,
+      "left": -38.4,
+      "attrs": { "color": "green", "key": "1" }
     },
     {
       "type": "wokwi-pushbutton",
       "id": "btn2",
-      "top": 159.8,
-      "left": -134.4,
-      "attrs": { "color": "green" }
-    }
+      "top": 15.8,
+      "left": -38.4,
+      "attrs": { "color": "blue", "key": "2" }
+    },
+    {
+      "type": "wokwi-lcd1602",
+      "id": "lcd1",
+      "top": -99.2,
+      "left": 380,
+      "attrs": { "pins": "i2c" }
+    },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 142.7, "left": -67.4, "attrs": {} },
+    { "type": "wokwi-ky-040", "id": "encoder1", "top": 318.5, "left": -96.8, "attrs": {} }
   ],
   "connections": [
-    [ "rgb1:R", "uno:6", "green", [ "v9.6", "h28.8" ] ],
-    [ "rgb1:G", "uno:5", "green", [ "v0" ] ],
-    [ "rgb1:B", "uno:3", "green", [ "v-86.4", "h203.2" ] ],
-    [ "rgb1:COM", "uno:5V", "green", [ "v143.6", "h220.9" ] ],
-    [ "btn1:1.r", "uno:2", "green", [ "v0", "h307.4" ] ],
-    [ "btn2:1.r", "uno:4", "green", [ "v-38.4", "h269" ] ],
-    [ "uno:GND.1", "btn1:2.l", "black", [ "v-47.4", "h-259.5", "v163.2" ] ],
-    [ "uno:GND.1", "btn2:2.l", "black", [ "v-57", "h-269.1", "v240" ] ]
+    [ "pot1:GND", "uno:GND.2", "black", [ "v13", "h-40" ] ],
+    [ "pot1:SIG", "uno:A0", "green", [ "v14", "h49", "v-90", "h-66" ] ],
+    [ "lcd1:SCL", "uno:A5", "blue", [ "h-9.6", "v365.1", "h-163.2", "v86.4" ] ],
+    [ "lcd1:SDA", "uno:A4", "green", [ "h-19.2", "v345.8", "h0", "v96", "h-172.8" ] ],
+    [ "lcd1:VCC", "uno:5V", "red", [ "h-28.8", "v297.7", "h0", "v172.8", "h-240" ] ],
+    [ "lcd1:GND", "uno:GND.3", "black", [ "h-38.4", "v201.6", "h0", "v249.6", "h-211.2" ] ],
+    [ "rgb1:R", "uno:6", "red", [ "v38.4", "h-3.7" ] ],
+    [ "rgb1:G", "uno:5", "green", [ "h1.3", "v67.2", "h-13.4" ] ],
+    [ "rgb1:B", "uno:3", "blue", [ "v76.8", "h-2.4" ] ],
+    [ "btn2:2.r", "uno:2", "green", [ "h96.2", "v-9.4", "h249.6" ] ],
+    [ "btn1:2.r", "uno:4", "green", [ "h153.8", "v57.8", "h182.4" ] ],
+    [ "btn2:1.l", "uno:GND.1", "black", [ "h0", "v29" ] ],
+    [ "btn1:1.l", "uno:GND.1", "black", [ "h0", "v19.4", "h268.8" ] ],
+    [ "rgb1:COM", "uno:GND.2", "green", [ "v38", "h76.9", "v249.6", "h-115.2" ] ],
+    [ "encoder1:VCC", "uno:5V", "red", [ "h48", "v0.4", "h73" ] ],
+    [
+      "uno:GND.2",
+      "encoder1:GND",
+      "black",
+      [ "v19.1", "h215.1", "v-259.2", "h-364.8", "v402.4" ]
+    ],
+    [ "uno:A2", "encoder1:CLK", "yellow", [ "v0" ] ],
+    [ "encoder1:DT", "uno:A3", "green", [ "h38.4", "v86.5" ] ],
+    [ "encoder1:SW", "uno:4", "yellow", [ "h0" ] ]
   ],
   "dependencies": {}
 }
