@@ -8,6 +8,8 @@
 #define RED_BUTTON 2
 #define GREEN_BUTTON 4
 
+#define DEBOUNCE_PERIOD 10UL
+
 /*
 Napisz program, który będzie migał trzema kolorami diody RGB.
 
@@ -19,34 +21,31 @@ Aktualna nastawa czasu jest wyświetlana na wyświetlaczu LCD.
 Program przygotować tak, aby nie blokować przełączania diod wzajemnie, nie blokować wykonania programu.
 */
 
-// Initial blink times in milliseconds
 unsigned long blinkTimes[3] = {900, 1000, 1100};
 unsigned long previousMillis[3] = {0, 0, 0};
 int ledPins[3] = {LED_RED, LED_GREEN, LED_BLUE};
 int currentLedIndex = 0;
 
-// Button states
-bool redButtonState = LOW;
-bool greenButtonState = LOW;
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
+int red_debounced_button_state = HIGH;
+int red_previous_reading = HIGH;
+unsigned long red_last_change_time = 0UL;
 
-// LCD setup
+int green_debounced_button_state = HIGH;
+int green_previous_reading = HIGH;
+unsigned long green_last_change_time = 0UL;
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-void setup() {
-    // Initialize LED pins
+void setup() 
+{
     for (int i = 0; i < 3; i++) {
         pinMode(ledPins[i], OUTPUT);
     }
 
-    // Initialize button pins
     pinMode(RED_BUTTON, INPUT);
     pinMode(GREEN_BUTTON, INPUT);
 
-    // Initialize LCD
     lcd.begin(16, 2);
-    lcd.print("R: 0.9s G: 1.0s B: 1.1s");
 }
 
 void displayBlinkTime(int index, char ledChar, float time) {
@@ -60,62 +59,48 @@ void displayBlinkTime(int index, char ledChar, float time) {
     lcd.print("s ");
 }
 
-bool is_button_pressed(int button)
+bool is_button_pressed(int button, int* debounced_button_state, int* previous_reading, unsigned long* last_change_time) 
 {
-    static int debounced_button_state = HIGH;
-    static int previous_reading = HIGH;
-    static int blocker = 0;
     bool isPressed = false;
 
     int current_reading = digitalRead(button);
 
-    if (previous_reading != current_reading)
+    if (*previous_reading != current_reading) 
     {
-        blocker = 1000;
+        *last_change_time = millis();
     }
 
-    if (blocker == 0)
+    if (millis() - *last_change_time > DEBOUNCE_PERIOD) 
     {
-        if(current_reading != debounced_button_state)
+        if (current_reading != *debounced_button_state) 
         {
-            if (debounced_button_state == HIGH && current_reading == LOW)
+            if (*debounced_button_state == HIGH && current_reading == LOW) 
             {
                 isPressed = true;
             }
-            debounced_button_state = current_reading;
+            *debounced_button_state = current_reading;
         }
     }
-    else
-    {
-        --blocker;
-    }
 
-    previous_reading = current_reading;
+    *previous_reading = current_reading;
 
     return isPressed;
 }
 
-void loop() {
+void loop()
+{
     unsigned long currentMillis = millis();
-
-    if (is_button_pressed(RED_BUTTON)){
+    if (is_button_pressed(RED_BUTTON, &red_debounced_button_state, &red_previous_reading, &red_last_change_time))
+    {        
         currentLedIndex = (currentLedIndex + 1) % 3;
     }
-
-    // Check green button state
-    //int readingGreen = digitalRead(GREEN_BUTTON);
-    //if (readingGreen != greenButtonState) {
-    //    lastDebounceTime = currentMillis;
-    //}
-    //if ((currentMillis - lastDebounceTime) > debounceDelay) {
-    //    if (readingGreen == HIGH) {
-    //        blinkTimes[currentLedIndex] += 100;
-    //        if (blinkTimes[currentLedIndex] > 2000) {
-    //            blinkTimes[currentLedIndex] = 500;
-    //        }
-    //    }
-    //}
-    //greenButtonState = readingGreen;
+    if (is_button_pressed(GREEN_BUTTON, &green_debounced_button_state, &green_previous_reading, &green_last_change_time))
+    {        
+        blinkTimes[currentLedIndex] += 100;
+        if (blinkTimes[currentLedIndex] > 2000) {
+            blinkTimes[currentLedIndex] = 500;
+        }
+    }
 
     for (int i = 0; i < 3; i++) {
         if (currentMillis - previousMillis[i] >= blinkTimes[i]) {

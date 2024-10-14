@@ -8,6 +8,8 @@
 #define RED_BUTTON 2
 #define GREEN_BUTTON 4
 
+#define DEBOUNCE_PERIOD 10UL
+
 /*
 Napisz program, który będzie migał trzema kolorami diody RGB.
 
@@ -19,19 +21,19 @@ Aktualna nastawa czasu jest wyświetlana na wyświetlaczu LCD.
 Program przygotować tak, aby nie blokować przełączania diod wzajemnie, nie blokować wykonania programu.
 */
 
-// Initial blink times in milliseconds
 unsigned long blinkTimes[3] = {900, 1000, 1100};
 unsigned long previousMillis[3] = {0, 0, 0};
 int ledPins[3] = {LED_RED, LED_GREEN, LED_BLUE};
 int currentLedIndex = 0;
 
-// Button states
-//bool redButtonState = LOW;
-//bool greenButtonState = LOW;
-//unsigned long lastDebounceTime = 0;
-//unsigned long debounceDelay = 50;
+int red_debounced_button_state = HIGH;
+int red_previous_reading = HIGH;
+unsigned long red_last_change_time = 0UL;
 
-// LCD setup
+int green_debounced_button_state = HIGH;
+int green_previous_reading = HIGH;
+unsigned long green_last_change_time = 0UL;
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() 
@@ -44,7 +46,6 @@ void setup()
     pinMode(GREEN_BUTTON, INPUT);
 
     lcd.begin(16, 2);
-    lcd.print("R: 0.9s G: 1.0s B: 1.1s");
 }
 
 void displayBlinkTime(int index, char ledChar, float time) {
@@ -58,62 +59,47 @@ void displayBlinkTime(int index, char ledChar, float time) {
     lcd.print("s ");
 }
 
-unsigned long lastDebounceTimeRed = 0;
-unsigned long lastDebounceTimeGreen = 0;
-unsigned long debounceDelay = 50;
-
-int lastButtonStateRed = LOW;
-int lastButtonStateGreen = LOW;
-int buttonStateRed;
-int buttonStateGreen;
-int ledStateRed = LOW;
-int ledStateGreen = LOW;
-
-bool read_green_button()
+bool is_button_pressed(int button, int* debounced_button_state, int* previous_reading, unsigned long* last_change_time) 
 {
-    int readingGreen = digitalRead(GREEN_BUTTON);
+    bool isPressed = false;
 
-    int result = false;
+    int current_reading = digitalRead(button);
 
-    if (readingGreen != lastButtonStateGreen) {
-        lastDebounceTimeGreen = millis();
+    if (*previous_reading != current_reading) 
+    {
+        *last_change_time = millis();
     }
-    if ((millis() - lastDebounceTimeGreen) > debounceDelay) {
-        if (readingGreen != buttonStateGreen) {
-            result = readingGreen == LOW;
+
+    if (millis() - *last_change_time > DEBOUNCE_PERIOD) 
+    {
+        if (current_reading != *debounced_button_state) 
+        {
+            if (*debounced_button_state == HIGH && current_reading == LOW) 
+            {
+                isPressed = true;
+            }
+            *debounced_button_state = current_reading;
         }
     }
-    lastButtonStateGreen = readingGreen;
-    return result;
+
+    *previous_reading = current_reading;
+
+    return isPressed;
 }
 
-bool read_red_button()
-{
-    int readingRed = digitalRead(RED_BUTTON);
-
-    int result = false;
-
-    if (readingRed != lastButtonStateRed) {
-        lastDebounceTimeRed = millis();
-    }
-    if ((millis() - lastDebounceTimeRed) > debounceDelay) {
-        if (readingRed != buttonStateRed) {
-            result = readingRed == LOW;
-        }
-    }
-    lastButtonStateRed = readingRed;
-    return result;
-}
-
-void loop() 
+void loop()
 {
     unsigned long currentMillis = millis();
-    if (read_red_button())
-    {
-        // print change to console
-        Serial.println("Red button pressed");
-        
+    if (is_button_pressed(RED_BUTTON, &red_debounced_button_state, &red_previous_reading, &red_last_change_time))
+    {        
         currentLedIndex = (currentLedIndex + 1) % 3;
+    }
+    if (is_button_pressed(GREEN_BUTTON, &green_debounced_button_state, &green_previous_reading, &green_last_change_time))
+    {        
+        blinkTimes[currentLedIndex] += 100;
+        if (blinkTimes[currentLedIndex] > 2000) {
+            blinkTimes[currentLedIndex] = 500;
+        }
     }
 
     for (int i = 0; i < 3; i++) {
