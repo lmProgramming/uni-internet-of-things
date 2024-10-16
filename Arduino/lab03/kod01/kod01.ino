@@ -25,6 +25,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 int counter = 0;
 bool pressing_red = false;
 bool pressing_green = false; 
+bool blinking = false;
 
 void initRGB()
 {
@@ -46,6 +47,8 @@ void initLCD()
 
 void blink(int times)
 {    
+    blinking = true;
+
     for (int i = 0; i < times; i++)
     {
         digitalWrite(LED_BUILTIN, HIGH); 
@@ -62,37 +65,46 @@ void setup()
     initButtons();
     
     initLCD();
+
+    write_to_display();
 }
 
 void check_button(int first_button, int second_button, int counter_change)
 {
-    if (digitalRead(first_button) == LOW)
-    {
-        while (digitalRead(first_button) == LOW)
-        {
-            if (digitalRead(second_button) == LOW)
-            {
-                blink(counter);
-                if (counter <= 0)
-                {
-                    delay(100);
-                }
-                return;
-            }
-        }
-
-        counter += counter_change;
+    if (digitalRead(first_button) != LOW)
+    { 
+        return;
     }
+
+    while (digitalRead(first_button) == LOW)
+    {
+        if (digitalRead(second_button) == LOW && !blinking)
+        {
+            blink(counter);
+            if (counter <= 0)
+            {
+                delay(100);
+            }
+            return;
+        }
+    }
+
+    counter += counter_change;
+    write_to_display();
+}
+
+void write_to_display()
+{
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(counter);
 }
 
 void loop()
 {
+    analogWrite(LED_BUILTIN, blinking);
     check_button(GREEN_BUTTON, RED_BUTTON, 1);
     check_button(RED_BUTTON, GREEN_BUTTON, -1);
-
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(counter);
 
     delay(50);
 }

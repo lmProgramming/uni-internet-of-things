@@ -15,7 +15,7 @@ Napisz program, który będzie migał trzema kolorami diody RGB.
 
 Każdy kolor diody ma mieć zmienny czas migania wyrażony w milisekundach.
 Program startuje z czasami R-0,9s, G-1,0s, B-1,1s.
-Proszę wykorzystać przyciski do zmiany wartości czasów migania. Można przyjąć, że przycisk czerwony 
+Proszę wykorzystać przyciski do zmiany wartości czasów migania. Można przyjąć, że przycisk czerwony
 wybiera aktualną diodę do zmiany wartości, a zielony zmienia wartość migania cyklicznie w przedziale 0,5s - 2,0s z krokiem co 0,1s.
 Aktualna nastawa czasu jest wyświetlana na wyświetlaczu LCD.
 Program przygotować tak, aby nie blokować przełączania diod wzajemnie, nie blokować wykonania programu.
@@ -36,22 +36,28 @@ unsigned long green_last_change_time = 0UL;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-void setup() 
+void setup()
 {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         pinMode(ledPins[i], OUTPUT);
     }
 
-    pinMode(RED_BUTTON, INPUT);
-    pinMode(GREEN_BUTTON, INPUT);
+    pinMode(RED_BUTTON, INPUT_PULLUP);
+    pinMode(GREEN_BUTTON, INPUT_PULLUP);
 
-    lcd.begin(16, 2);
+    lcd.init();
+    lcd.backlight();
 }
 
-void displayBlinkTime(int index, char ledChar, float time) {
-    if (currentLedIndex == index) {
+void displayBlinkTime(int index, char ledChar, float time)
+{
+    if (currentLedIndex == index)
+    {
         lcd.print((char)toupper(ledChar));
-    } else {
+    }
+    else
+    {
         lcd.print((char)tolower(ledChar));
     }
     lcd.print(": ");
@@ -59,22 +65,22 @@ void displayBlinkTime(int index, char ledChar, float time) {
     lcd.print("s ");
 }
 
-bool is_button_pressed(int button, int* debounced_button_state, int* previous_reading, unsigned long* last_change_time) 
+bool is_button_pressed(int button, int *debounced_button_state, int *previous_reading, unsigned long *last_change_time)
 {
     bool isPressed = false;
 
     int current_reading = digitalRead(button);
 
-    if (*previous_reading != current_reading) 
+    if (*previous_reading != current_reading)
     {
         *last_change_time = millis();
     }
 
-    if (millis() - *last_change_time > DEBOUNCE_PERIOD) 
+    if (millis() - *last_change_time > DEBOUNCE_PERIOD)
     {
-        if (current_reading != *debounced_button_state) 
+        if (current_reading != *debounced_button_state)
         {
-            if (*debounced_button_state == HIGH && current_reading == LOW) 
+            if (*debounced_button_state == HIGH && current_reading == LOW)
             {
                 isPressed = true;
             }
@@ -91,24 +97,26 @@ void loop()
 {
     unsigned long currentMillis = millis();
     if (is_button_pressed(RED_BUTTON, &red_debounced_button_state, &red_previous_reading, &red_last_change_time))
-    {        
+    {
         currentLedIndex = (currentLedIndex + 1) % 3;
     }
     if (is_button_pressed(GREEN_BUTTON, &green_debounced_button_state, &green_previous_reading, &green_last_change_time))
-    {        
+    {
         blinkTimes[currentLedIndex] += 100;
-        if (blinkTimes[currentLedIndex] > 2000) {
+        if (blinkTimes[currentLedIndex] > 2000)
+        {
             blinkTimes[currentLedIndex] = 500;
         }
     }
 
-    for (int i = 0; i < 3; i++) {
-        if (currentMillis - previousMillis[i] >= blinkTimes[i]) {
+    for (int i = 0; i < 3; i++)
+    {
+        if (currentMillis - previousMillis[i] >= blinkTimes[i])
+        {
             previousMillis[i] = currentMillis;
             digitalWrite(ledPins[i], !digitalRead(ledPins[i]));
-            break;
         }
-    }    
+    }
 
     lcd.setCursor(0, 0);
     displayBlinkTime(0, 'r', blinkTimes[0] / 1000.0);
