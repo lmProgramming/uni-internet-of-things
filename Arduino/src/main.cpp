@@ -1,130 +1,88 @@
 #include <Arduino.h>
-#include <ctype.h>
+#include <LiquidCrystal_I2C.h>
+#include <limits.h>
 
 #define LED_RED 6
-#define LED_GREEN 5
 #define LED_BLUE 3
+#define POTENTIOMETER A0
+
+/*
+Napisz program, który będzie mierzy napięcie jakie otrzymujemy z potencjometru na wejście GPIO.
+Wynik pomiaru powinien być wyświetlony na wyświetlaczu LCD przedstawiając aktualne napięcie w Voltach
+oraz liczbową reprezentację ADC odczytaną z wejścia GPIO. Napięcie ma być wyrównane do lewej, natomiast
+ADC do prawej strony wyświetlacza. Upewnij się, że wyświetlane wartości na wyświtlaczu LCD nie migają w
+trakcie zmiany nastawy. Poniżej przykład poprawnie rozwiązanego zadania:
+Miernik A0
+V=2.60   ADC=532
+
+Dodatkowo wykorzystaj Serial Plotter w środowisku Arduino IDE do przedstawienia wykresu napięcia w czasie. Aktualna wartość ADC także ma być na wykresie.
+Dodatkowo użyj sprintf do formatowania napięcia do postaci z dwoma miejscami po przecinku.
+*/
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup()
 {
     pinMode(LED_RED, OUTPUT);
+    analogWrite(LED_RED, 0);
     pinMode(LED_BLUE, OUTPUT);
-    pinMode(LED_GREEN, OUTPUT);
+    analogWrite(LED_BLUE, 0);
 
-    digitalWrite(LED_RED, LOW);
-    digitalWrite(LED_BLUE, LOW);
-    digitalWrite(LED_GREEN, LOW);
+    lcd.init();
+    lcd.backlight();
 
     Serial.begin(9600);
-    while (!Serial)
-    { /* just wait */
-    }
-    Serial.println("Ready. To reverse color use 'red', 'green', 'blue' commands. To change value use 'red 255', 'green 0', 'blue 122'. Value must be between 0 and 255.");
 }
 
-int red_value = 0;
-int green_value = 0;
-int blue_value = 0;
-
-void get_color_address(int color, int *&value)
+int numPlaces(int n)
 {
-    if (color == LED_RED)
+    int r = 1;
+    if (n < 0)
+        n = (n == INT_MIN) ? INT_MAX : -n;
+    while (n > 9)
     {
-        value = &red_value;
+        n /= 10;
+        r++;
     }
-    else if (color == LED_GREEN)
-    {
-        value = &green_value;
-    }
-    else if (color == LED_BLUE)
-    {
-        value = &blue_value;
-    }
+    return r;
 }
 
-void reverse_color(int *value)
-{
-    *value = 255 - *value;
-}
-
-int color_name_to_int(String color)
-{
-    if (color == "red")
-    {
-        return LED_RED;
-    }
-    else if (color == "green")
-    {
-        return LED_GREEN;
-    }
-    else if (color == "blue")
-    {
-        return LED_BLUE;
-    }
-    return -1;
-}
-
-bool is_number(String &str)
-{
-    for (char const &c : str)
-    {
-        if (!isdigit(c))
-        {
-            return false;
-        }
-    }
-    return true;
-}
+int value = -1;
 
 void loop()
 {
-    if (Serial.available() == 0)
+    int new_value = analogRead(POTENTIOMETER);
+
+    if (new_value == value)
     {
         return;
     }
 
-    String command = Serial.readStringUntil('\n');
-    command.trim();
-    command.toLowerCase();
+    value = new_value;
 
-    int space_index = command.indexOf(' ');
-    String chosen_color = (space_index != -1) ? command.substring(0, space_index) : command;
+    Serial.println(value);
 
-    int color = color_name_to_int(chosen_color);
+    double voltage = value * (5.0 / 1023.0);
 
-    if (color == -1)
-    {
-        Serial.println(String("Unknown color '") + chosen_color + "'");
-        return;
-    }
+    char voltageStr[10];
+    dtostrf(voltage, 4, 2, voltageStr);
 
-    int *value;
+    lcd.setCursor(0, 0);
+    lcd.print("Miernik A0");
 
-    get_color_address(color, value);
+    lcd.setCursor(0, 1);
+    lcd.print("V=");
+    lcd.print(voltageStr);
 
-    if (space_index == -1)
-    {
-        reverse_color(value);
-    }
-    else
-    {
-        String chosen_value = command.substring(space_index + 1);
+    int adc_start_position = 12 - numPlaces(value);
+    lcd.setCursor(adc_start_position, 1);
+    lcd.print("ADC=");
+    lcd.print(value);
 
-        if (!is_number(chosen_value))
-        {
-            Serial.println(String("Expected int between 0 and 255 '") + chosen_value + "'");
-            return;
-        }
+    Serial.print("Voltage: ");
+    Serial.print(voltage);
+    Serial.print(" V, ADC: ");
+    Serial.println(value);
 
-        *value = chosen_value.toInt();
-
-        if (*value < 0 || *value > 255)
-        {
-            Serial.println(String("Expected int between 0 and 255 '") + *value + "'");
-            return;
-        }
-    }
-
-    Serial.println(String("Setting color '") + chosen_color + "' to value '" + *value + "'");
-    analogWrite(color, *value);
+    delay(100);
 }

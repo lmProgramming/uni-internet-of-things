@@ -5,6 +5,11 @@
 #define LED_GREEN 5
 #define LED_BLUE 3
 
+/*
+Napis program,  który będzie reagował na komendy wysyłane z narzędzia Serial Monitor do zestawu Arduino.
+Program ma sterować diodami LED RGB z zadaną każdej diodzie jasnościa osobno. Postać komend należy zaprojektować samemu.
+*/
+
 void setup()
 {
     pinMode(LED_RED, OUTPUT);
