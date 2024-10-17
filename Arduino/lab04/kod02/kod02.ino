@@ -79,9 +79,10 @@ void loop()
     lcd.print("ADC=");
     lcd.print(value);
 
-    Serial.print("Voltage: ");
+    Serial.print("Voltage:");
     Serial.print(voltage);
-    Serial.print(" V, ADC: ");
+    Serial.print(",");
+    Serial.print("ADC:");
     Serial.println(value);
 
     delay(100);
