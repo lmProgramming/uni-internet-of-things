@@ -43,18 +43,18 @@ void setup()
 
 volatile int encoder1 = HIGH;
 volatile int encoder2 = HIGH;
-volatile unsigned long encoderTimestamp = 0UL;
+volatile unsigned long encoder_timestamp = 0UL;
 
 ISR(PCINT1_vect)
 {
     encoder1 = digitalRead(ENCODER1);
     encoder2 = digitalRead(ENCODER2);
-    encoderTimestamp = millis();
+    encoder_timestamp = millis();
 }
 
 int encoderValue = 0;
 int lastEn1 = LOW;
-unsigned long lastChangeTimestamp = 0UL;
+unsigned long last_change_timestamp = 0UL;
 void loop()
 {
 
@@ -66,10 +66,10 @@ void loop()
     {
         en1 = encoder1;
         en2 = encoder2;
-        timestamp = encoderTimestamp;
+        timestamp = encoder_timestamp;
     }
 
-    if (en1 == LOW && timestamp > lastChangeTimestamp + DEBOUNCING_PERIOD)
+    if (en1 == LOW && timestamp > last_change_timestamp + DEBOUNCING_PERIOD)
     {
         if (en2 == HIGH)
         {
@@ -81,7 +81,7 @@ void loop()
             if (encoderValue > 0)
                 encoderValue -= 15;
         }
-        lastChangeTimestamp = timestamp;
+        last_change_timestamp = timestamp;
 
         myAction(encoderValue);
     }

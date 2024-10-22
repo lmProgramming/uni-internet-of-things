@@ -39,7 +39,7 @@ void setup()
 
 int encoderValue = 0;
 int lastEn1 = LOW;
-unsigned long lastChangeTimestamp = 0UL;
+unsigned long last_change_timestamp = 0UL;
 void loop()
 {
 
@@ -47,7 +47,7 @@ void loop()
     int en2 = digitalRead(ENCODER2);
 
     unsigned long timestamp = millis();
-    if (en1 == LOW && lastEn1 == HIGH && timestamp > lastChangeTimestamp + DEBOUNCING_PERIOD)
+    if (en1 == LOW && lastEn1 == HIGH && timestamp > last_change_timestamp + DEBOUNCING_PERIOD)
     {
         if (en2 == HIGH)
         {
@@ -59,7 +59,7 @@ void loop()
             if (encoderValue > 0)
                 encoderValue -= 15;
         }
-        lastChangeTimestamp = timestamp;
+        last_change_timestamp = timestamp;
 
         myAction(encoderValue);
     }

@@ -1,8 +1,6 @@
-#include <LiquidCrystal_I2C.h>
 #include <Arduino.h>
-
-#define RED_BUTTON 2
-#define DEBOUNCING_PERIOD 100
+#include <util/atomic.h>
+#include <LiquidCrystal_I2C.h>
 
 /*
 Proszę napisać program, który na wyświetlaczu LCD będzie nawigował po dwupoziomowym menu.
@@ -46,57 +44,228 @@ About	Displays Name and Surname author of program
 Na najwyższą ocenę należy wykorzystać przerwania do obsługi enkodera. Sposób wyświetalnia menu na wyświetlacze należy zaprojektować samemu. Ważne jest, aby było czytelnie i intuicyjnie.
 */
 
+#define LED_RED 6
+#define LED_GREEN 5
+#define LED_BLUE 3
+
+#define ENCODER1 A2
+#define ENCODER2 A3
+
+#define RED_BUTTON 2
+#define GREEN_BUTTON 4
+
+#define DEBOUNCING_PERIOD 100
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-int pressCounter = 0;
-volatile unsigned long buttonTimestamp = 0UL;
-unsigned long previousButtonTimestamp = 0UL;
-unsigned long elapsedStartTimestamp = 0UL;
-
-void interruptAction()
+enum MenuItemType
 {
-    buttonTimestamp = millis();
+    ACTION,
+    SUBMENU
+};
+
+struct MenuItem
+{
+    const char *name;
+    MenuItemType type;
+    void (*action)();
+    MenuItem *submenu;
+    int submenuSize;
+};
+
+void toggleLEDPower();
+void changeRedIntensity();
+void changeGreenIntensity();
+void changeBlueIntensity();
+void toggleBacklight();
+void selectChar();
+void displaySensorIN();
+void displaySensorOUT();
+void changeUnits();
+void displayAbout();
+
+MenuItem ledOptions[] = {
+    {"Power [ON | OFF]", ACTION, toggleLEDPower, nullptr, 0},
+    {"Red", ACTION, changeRedIntensity, nullptr, 0},
+    {"Green", ACTION, changeGreenIntensity, nullptr, 0},
+    {"Blue", ACTION, changeBlueIntensity, nullptr, 0}};
+
+MenuItem displayOptions[] = {
+    {"Backlight [ON | OFF]", ACTION, toggleBacklight, nullptr, 0},
+    {"Selector [> | - | <custom char>]", ACTION, selectChar, nullptr, 0}};
+
+MenuItem temperatureOptions[] = {
+    {"Sensor IN", ACTION, displaySensorIN, nullptr, 0},
+    {"Sensor OUT", ACTION, displaySensorOUT, nullptr, 0},
+    {"Units [C | F]", ACTION, changeUnits, nullptr, 0}};
+
+MenuItem mainMenu[] = {
+    {"LED options", SUBMENU, nullptr, ledOptions, 4},
+    {"Display", SUBMENU, nullptr, displayOptions, 2},
+    {"Temperature", SUBMENU, nullptr, temperatureOptions, 3},
+    {"About", ACTION, displayAbout, nullptr, 0}};
+
+MenuItem *currentMenu = mainMenu;
+int currentMenuSize = 4;
+int currentIndex = 0;
+bool inSubMenu = false;
+char custom_char = '>';
+
+volatile int encoder1 = HIGH;
+volatile int encoder2 = HIGH;
+volatile unsigned long encoder_timestamp = 0UL;
+volatile unsigned long last_change_timestamp = 0UL;
+
+ISR(PCINT1_vect)
+{
+    encoder1 = digitalRead(ENCODER1);
+    encoder2 = digitalRead(ENCODER2);
+    encoder_timestamp = millis();
 }
 
-void printResults(int count, unsigned long time)
+void updateDisplay()
 {
-    char buffer[40];
-    sprintf(buffer, "Press count%5d", count);
-    lcd.setCursor(0, 0);
-    lcd.print(buffer);
-    sprintf(buffer, "Time [ms]%7lu", time);
-    // sprintf(buffer, "Time [s]%4lu.%03d", time / 1000, time % 1000);
-    lcd.setCursor(0, 1);
-    lcd.print(buffer);
+    lcd.clear();
+
+    int starting_index = currentIndex != currentMenuSize - 1 ? currentIndex : currentIndex - 1;
+
+    Serial.flush();
+
+    for (int i = starting_index; i <= starting_index + 1; i++)
+    {
+        Serial.print(i);
+        delay(1);
+        Serial.print(currentMenu[i].name);
+        delay(1);
+
+        if (i == currentIndex)
+        {
+            lcd.print(custom_char);
+        }
+        else
+        {
+            lcd.print(" ");
+        }
+        lcd.print(currentMenu[i].name);
+        lcd.setCursor(0, i + 1);
+    }
 }
 
 void setup()
 {
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
+    pinMode(ENCODER1, INPUT_PULLUP);
+    pinMode(ENCODER2, INPUT_PULLUP);
     pinMode(RED_BUTTON, INPUT_PULLUP);
     lcd.init();
     lcd.backlight();
-    printResults(0, 0UL);
 
-    attachInterrupt(digitalPinToInterrupt(RED_BUTTON), interruptAction, FALLING);
+    PCICR |= (1 << PCIE1);
+    PCMSK1 |= (1 << PCINT10);
+
+    updateDisplay();
 }
 
 void loop()
 {
-    noInterrupts();
-    unsigned long localButtonTimestamp = buttonTimestamp;
-    interrupts();
+    int en1;
+    int en2;
+    unsigned long timestamp;
 
-    if (localButtonTimestamp != previousButtonTimestamp && millis() > localButtonTimestamp + DEBOUNCING_PERIOD)
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
+        en1 = encoder1;
+        en2 = encoder2;
+        timestamp = encoder_timestamp;
+    }
+
+    if (en1 == LOW && timestamp > last_change_timestamp + DEBOUNCING_PERIOD)
+    {
+        if (en2 == HIGH)
+        {
+            currentIndex = (currentIndex + 1) % currentMenuSize;
+        }
+        else
+        {
+            currentIndex = (currentIndex - 1 + currentMenuSize) % currentMenuSize;
+        }
+        last_change_timestamp = timestamp;
+        updateDisplay();
+    }
+
+    if (digitalRead(RED_BUTTON) == LOW)
+    {
+        delay(50); // Debounce
         if (digitalRead(RED_BUTTON) == LOW)
         {
-            pressCounter++;
-
-            unsigned long elapsedTime = localButtonTimestamp - elapsedStartTimestamp;
-            elapsedStartTimestamp = localButtonTimestamp;
-
-            printResults(pressCounter, elapsedTime);
+            if (currentMenu[currentIndex].type == ACTION)
+            {
+                currentMenu[currentIndex].action();
+            }
+            else if (currentMenu[currentIndex].type == SUBMENU)
+            {
+                currentMenu = currentMenu[currentIndex].submenu;
+                currentMenuSize = currentMenu[currentIndex].submenuSize;
+                currentIndex = 0;
+                inSubMenu = true;
+                updateDisplay();
+            }
         }
-        previousButtonTimestamp = localButtonTimestamp;
+        while (digitalRead(RED_BUTTON) == LOW)
+            ; // Wait for button release
     }
+}
+
+void toggleLEDPower()
+{
+    // Implement LED power toggle
+}
+
+void changeRedIntensity()
+{
+    // Implement red LED intensity change
+}
+
+void changeGreenIntensity()
+{
+    // Implement green LED intensity change
+}
+
+void changeBlueIntensity()
+{
+    // Implement blue LED intensity change
+}
+
+void toggleBacklight()
+{
+    // Implement backlight toggle
+}
+
+void selectChar()
+{
+    // Implement character selection
+}
+
+void displaySensorIN()
+{
+    // Implement sensor IN display
+}
+
+void displaySensorOUT()
+{
+    // Implement sensor OUT display
+}
+
+void changeUnits()
+{
+    // Implement unit change
+}
+
+void displayAbout()
+{
+    lcd.clear();
+    lcd.print("Author: John Doe");
+    delay(2000);
+    updateDisplay();
 }
