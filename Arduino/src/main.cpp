@@ -1,88 +1,102 @@
-#include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
-#include <limits.h>
+#include <Arduino.h>
 
-#define LED_RED 6
-#define LED_BLUE 3
-#define POTENTIOMETER A0
+#define RED_BUTTON 2
+#define DEBOUNCING_PERIOD 100
 
 /*
-Napisz program, który będzie mierzy napięcie jakie otrzymujemy z potencjometru na wejście GPIO.
-Wynik pomiaru powinien być wyświetlony na wyświetlaczu LCD przedstawiając aktualne napięcie w Voltach
-oraz liczbową reprezentację ADC odczytaną z wejścia GPIO. Napięcie ma być wyrównane do lewej, natomiast
-ADC do prawej strony wyświetlacza. Upewnij się, że wyświetlane wartości na wyświtlaczu LCD nie migają w
-trakcie zmiany nastawy. Poniżej przykład poprawnie rozwiązanego zadania:
-Miernik A0
-V=2.60   ADC=532
+Proszę napisać program, który na wyświetlaczu LCD będzie nawigował po dwupoziomowym menu.
+Nawigacja po elementach menu ma zostać zrealizowana z wykorzystaniem enkodera oraz przycisków.
+Enkoder przesuwa się po elementach menu z tego samego poziomu, natomiast przycisk wchodzi do podmenu
+lub uruchamia akcję z wybraną operacją z menu.
 
-Dodatkowo wykorzystaj Serial Plotter w środowisku Arduino IDE do przedstawienia wykresu napięcia w czasie. Aktualna wartość ADC także ma być na wykresie.
-Dodatkowo użyj sprintf do formatowania napięcia do postaci z dwoma miejscami po przecinku.
+Menu ma mieć poniższą postać:
+
+LED options
+    Power [ON | OFF]
+    Red
+    Green
+    Blue
+Display
+    Backlight [ON | OFF]
+    Selector [> | - | <custom char>]
+Temperature
+    Sensor IN
+    Sensor OUT
+    Units [C | F]
+About
+Poniżej przykład akcji jakie są uruchamiane dla poszczególnych opcji menu:
+
+Option	Action
+LED options->Power	Turns on and off the RGB LED. Proper state should be displayed on LCD
+LED options->Red	Changes intensity of red LED colour
+LED options->Green	Changes intensity of green LED colour
+LED options->Blue	Changes intensity of blue LED colour
+Display->Backlight	Turns on and off the LCD backlight. Proper state should be displayed on LCD
+Display->Selector	In this option user can select char that is pointing selected option on LCD. For a larger number of points, a custom character must be defined in the display memory, e.g. an arrow
+Temperature->Sensor IN
+Displays only some mocked temperature value. Don’t need to read a real temperature from sensor.
+
+Temperature->Sensor OUT
+Displays only some mocked temperature value. Don’t need to read a real temperature from sensor.
+
+Temperature->Units	Units: changes temperature units between C and F. Currently select unit should be displayed when executing mock of temperature sensors.
+About	Displays Name and Surname author of program
+
+Na najwyższą ocenę należy wykorzystać przerwania do obsługi enkodera. Sposób wyświetalnia menu na wyświetlacze należy zaprojektować samemu. Ważne jest, aby było czytelnie i intuicyjnie.
 */
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+int pressCounter = 0;
+volatile unsigned long buttonTimestamp = 0UL;
+unsigned long previousButtonTimestamp = 0UL;
+unsigned long elapsedStartTimestamp = 0UL;
+
+void interruptAction()
+{
+    buttonTimestamp = millis();
+}
+
+void printResults(int count, unsigned long time)
+{
+    char buffer[40];
+    sprintf(buffer, "Press count%5d", count);
+    lcd.setCursor(0, 0);
+    lcd.print(buffer);
+    sprintf(buffer, "Time [ms]%7lu", time);
+    // sprintf(buffer, "Time [s]%4lu.%03d", time / 1000, time % 1000);
+    lcd.setCursor(0, 1);
+    lcd.print(buffer);
+}
+
 void setup()
 {
-    pinMode(LED_RED, OUTPUT);
-    analogWrite(LED_RED, 0);
-    pinMode(LED_BLUE, OUTPUT);
-    analogWrite(LED_BLUE, 0);
-
+    pinMode(RED_BUTTON, INPUT_PULLUP);
     lcd.init();
     lcd.backlight();
+    printResults(0, 0UL);
 
-    Serial.begin(9600);
+    attachInterrupt(digitalPinToInterrupt(RED_BUTTON), interruptAction, FALLING);
 }
-
-int numPlaces(int n)
-{
-    int r = 1;
-    if (n < 0)
-        n = (n == INT_MIN) ? INT_MAX : -n;
-    while (n > 9)
-    {
-        n /= 10;
-        r++;
-    }
-    return r;
-}
-
-int value = -1;
 
 void loop()
 {
-    int new_value = analogRead(POTENTIOMETER);
+    noInterrupts();
+    unsigned long localButtonTimestamp = buttonTimestamp;
+    interrupts();
 
-    if (new_value == value)
+    if (localButtonTimestamp != previousButtonTimestamp && millis() > localButtonTimestamp + DEBOUNCING_PERIOD)
     {
-        return;
+        if (digitalRead(RED_BUTTON) == LOW)
+        {
+            pressCounter++;
+
+            unsigned long elapsedTime = localButtonTimestamp - elapsedStartTimestamp;
+            elapsedStartTimestamp = localButtonTimestamp;
+
+            printResults(pressCounter, elapsedTime);
+        }
+        previousButtonTimestamp = localButtonTimestamp;
     }
-
-    value = new_value;
-
-    Serial.println(value);
-
-    double voltage = value * (5.0 / 1023.0);
-
-    char voltageStr[10];
-    dtostrf(voltage, 4, 2, voltageStr);
-
-    lcd.setCursor(0, 0);
-    lcd.print("Miernik A0");
-
-    lcd.setCursor(0, 1);
-    lcd.print("V=");
-    lcd.print(voltageStr);
-
-    int adc_start_position = 12 - numPlaces(value);
-    lcd.setCursor(adc_start_position, 1);
-    lcd.print("ADC=");
-    lcd.print(value);
-
-    Serial.print("Voltage: ");
-    Serial.print(voltage);
-    Serial.print(" V, ADC: ");
-    Serial.println(value);
-
-    delay(100);
 }
