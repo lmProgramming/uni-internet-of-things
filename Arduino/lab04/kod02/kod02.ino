@@ -32,6 +32,16 @@ void setup()
     lcd.backlight();
 
     Serial.begin(9600);
+
+    lcd.setCursor(0, 0);
+    lcd.print("Miernik A0");
+
+    lcd.setCursor(0, 1);
+    lcd.print("V=");
+    lcd.print(0.00);
+
+    lcd.setCursor(8, 1);
+    lcd.print("ADC=0   ");
 }
 
 int numPlaces(int n)
@@ -53,30 +63,24 @@ void loop()
 {
     int new_value = analogRead(POTENTIOMETER);
 
-    if (new_value == value)
+    if (abs(new_value - value) < 5)
     {
         return;
     }
 
     value = new_value;
 
-    Serial.println(value);
-
     double voltage = value * (5.0 / 1023.0);
 
     char voltageStr[10];
     dtostrf(voltage, 4, 2, voltageStr);
 
-    lcd.setCursor(0, 0);
-    lcd.print("Miernik A0");
-
-    lcd.setCursor(0, 1);
-    lcd.print("V=");
+    lcd.setCursor(2, 1);
     lcd.print(voltageStr);
 
-    int adc_start_position = 12 - numPlaces(value);
-    lcd.setCursor(adc_start_position, 1);
-    lcd.print("ADC=");
+    lcd.setCursor(12, 1);
+    lcd.print("    ");
+    lcd.setCursor(12, 1);
     lcd.print(value);
 
     Serial.print("Voltage:");

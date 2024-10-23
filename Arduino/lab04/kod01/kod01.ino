@@ -1,14 +1,16 @@
-#include <Arduino.h>
 #include <ctype.h>
+#include <Arduino.h>
 
 #define LED_RED 6
 #define LED_GREEN 5
 #define LED_BLUE 3
 
 /*
-Napis program,  który będzie reagował na komendy wysyłane z narzędzia Serial Monitor do zestawu Arduino.
+Napis program, który będzie reagował na komendy wysyłane z narzędzia Serial Monitor do zestawu Arduino.
 Program ma sterować diodami LED RGB z zadaną każdej diodzie jasnościa osobno. Postać komend należy zaprojektować samemu.
 */
+
+int leds[] = {LED_RED, LED_GREEN, LED_BLUE};
 
 void setup()
 {
@@ -24,6 +26,7 @@ void setup()
     while (!Serial)
     { /* just wait */
     }
+    Serial.println("");
     Serial.println("Ready. To reverse color use 'red', 'green', 'blue' commands. To change value use 'red 255', 'green 0', 'blue 122'. Value must be between 0 and 255.");
 }
 
@@ -92,6 +95,26 @@ void loop()
     command.trim();
     command.toLowerCase();
 
+    if (command == "off")
+    {
+        for (int color : leds)
+        {
+            analogWrite(color, 0);
+        }
+        Serial.println("Setting all colors OFF");
+        return;
+    }
+
+    if (command == "on")
+    {
+        for (int color : leds)
+        {
+            analogWrite(color, 255);
+        }
+        Serial.println("Setting all colors ON");
+        return;
+    }
+
     int space_index = command.indexOf(' ');
     String chosen_color = (space_index != -1) ? command.substring(0, space_index) : command;
 
@@ -103,7 +126,7 @@ void loop()
         return;
     }
 
-    int *value;
+    int *value = 0;
 
     get_color_address(color, value);
 
