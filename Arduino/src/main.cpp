@@ -71,7 +71,7 @@ Na najwyższą ocenę należy wykorzystać przerwania do obsługi enkodera. Spos
 #define RED_BUTTON 2
 #define GREEN_BUTTON 4
 
-#define DEBOUNCING_PERIOD 10UL
+#define DEBOUNCING_PERIOD 100
 
 int leds[] = {LED_RED, LED_GREEN, LED_BLUE};
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -134,7 +134,7 @@ int currentMenuSize = main_menu_size;
 int currentIndex = 0;
 char chosen_selector = '>';
 
-std::vector<MenuItem> submenus_stack = {};
+Vector<MenuItem> submenus_stack = {};
 
 volatile int encoder1 = HIGH;
 volatile int encoder2 = HIGH;
@@ -191,13 +191,8 @@ void updateDisplay()
 
     int starting_index = currentIndex != currentMenuSize - 1 ? currentIndex : currentIndex - 1;
 
-    Serial.flush();
-
     for (int i = starting_index; i <= starting_index + 1; i++)
     {
-        Serial.print(currentMenu[i].name);
-        delay(1);
-
         if (i == currentIndex)
         {
             lcd.print(chosen_selector);
@@ -217,11 +212,11 @@ void setup()
     pinMode(LED_GREEN, OUTPUT);
     pinMode(LED_BLUE, OUTPUT);
 
-    pinMode(ENCODER1, INPUT_PULLUP);
-    pinMode(ENCODER2, INPUT_PULLUP);
-
     pinMode(RED_BUTTON, INPUT_PULLUP);
     pinMode(GREEN_BUTTON, INPUT_PULLUP);
+
+    pinMode(ENCODER1, INPUT_PULLUP);
+    pinMode(ENCODER2, INPUT_PULLUP);
 
     lcd.init();
     lcd.backlight();
@@ -234,7 +229,7 @@ void setup()
 
 void transition_to_main_menu()
 {
-    parent_menu = nullptr;
+    submenus_stack = {};
     currentMenu = mainMenu;
     currentMenuSize = main_menu_size;
     currentIndex = 0;
@@ -243,8 +238,10 @@ void transition_to_main_menu()
 
 void transition_to_submenu(MenuItem *submenu, int size)
 {
-    parent_menu = currentMenu;
-    parent_menu_size = currentMenuSize;
+    MenuItem menu = {
+        "", SUBMENU, nullptr, currentMenu, currentMenuSize};
+
+    submenus_stack.push_back(menu);
 
     currentMenu = submenu;
     currentMenuSize = size;
@@ -265,6 +262,11 @@ void loop()
         en2 = encoder2;
         timestamp = encoder_timestamp;
     }
+
+    lcd.setCursor(0, 0);
+    lcd.print(en1);
+    lcd.print(en2);
+    lcd.print(encoder_timestamp);
 
     if (en1 == LOW && timestamp > last_change_timestamp + DEBOUNCING_PERIOD)
     {
@@ -310,10 +312,10 @@ void loop()
         delay(DEBOUNCING_PERIOD); // Debounce
         if (digitalRead(GREEN_BUTTON) == LOW)
         {
-            if (parent_menu != nullptr)
-            {
-                transition_to_submenu(parent_menu, parent_menu_size);
-            }
+            // if (parent_menu != nullptr)
+            //{
+            //     transition_to_submenu(parent_menu, parent_menu_size);
+            // }
         }
 
         while (digitalRead(GREEN_BUTTON) == LOW)
