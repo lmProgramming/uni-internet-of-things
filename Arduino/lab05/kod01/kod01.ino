@@ -76,6 +76,17 @@ Na najwyższą ocenę należy wykorzystać przerwania do obsługi enkodera. Spos
 int leds[] = {LED_RED, LED_GREEN, LED_BLUE};
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+byte customChar[] = {
+    B00000,
+    B00000,
+    B00000,
+    B01010,
+    B11111,
+    B11111,
+    B01110,
+    B00100,
+};
+
 enum MenuItemType
 {
     ACTION,
@@ -117,7 +128,7 @@ MenuItem selectorOptions[] = {
 
 MenuItem displayOptions[] = {
     {"Bckled [ON|OFF]", ACTION, toggleBacklight, nullptr, 0},
-    {"Selector[>|-|)]", SUBMENU, nullptr, selectorOptions, 3}};
+    {"Selector[>|-|h]", SUBMENU, nullptr, selectorOptions, 3}};
 
 MenuItem temperatureOptions[] = {
     {"Sensor IN", ACTION, displaySensorIN, nullptr, 0},
@@ -242,6 +253,8 @@ void setup()
 
     PCICR |= (1 << PCIE1);
     PCMSK1 |= (1 << PCINT10);
+
+    lcd.createChar(0, customChar);
 
     updateDisplay();
 }
@@ -431,35 +444,31 @@ String toggleBacklight()
 String selectChar1()
 {
     chosen_selector = '>';
+    updateDisplay();
+
+    return "";
 }
 
 String selectChar2()
 {
     chosen_selector = '-';
+    updateDisplay();
+
+    return "";
 }
 
-byte customChar[] = {
-    B00000,
-    B00000,
-    B00000,
-    B01010,
-    B11111,
-    B11111,
-    B01110,
-    B00100,
-};
 String selectChar3()
 {
-    lcd.createChar(0, customChar);
-    chosen_selector = "h";
+    chosen_selector = 'h';
+    updateDisplay();
+
+    return "";
 }
 
 bool celsius = true;
 
 String displaySensorIN()
 {
-    // Implement sensor IN display
-    // return "15.0" + (celsius ? "C" : "F");
     if (celsius)
     {
         return "15.0C";

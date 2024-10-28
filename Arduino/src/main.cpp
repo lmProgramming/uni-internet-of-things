@@ -76,6 +76,17 @@ Na najwyższą ocenę należy wykorzystać przerwania do obsługi enkodera. Spos
 int leds[] = {LED_RED, LED_GREEN, LED_BLUE};
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+byte customChar[] = {
+    B00000,
+    B00000,
+    B00000,
+    B01010,
+    B11111,
+    B11111,
+    B01110,
+    B00100,
+};
+
 enum MenuItemType
 {
     ACTION,
@@ -96,7 +107,9 @@ String changeRedIntensity();
 String changeGreenIntensity();
 String changeBlueIntensity();
 String toggleBacklight();
-String selectChar();
+String selectChar1();
+String selectChar2();
+String selectChar3();
 String displaySensorIN();
 String displaySensorOUT();
 String changeUnits();
@@ -108,14 +121,14 @@ MenuItem ledOptions[] = {
     {"Green", ACTION, changeGreenIntensity, nullptr, 0},
     {"Blue", ACTION, changeBlueIntensity, nullptr, 0}};
 
+MenuItem selectorOptions[] = {
+    {"Arrow", ACTION, selectChar1, nullptr, 0},
+    {"Dash", ACTION, selectChar2, nullptr, 0},
+    {"Custom char", ACTION, selectChar3, nullptr, 0}};
+
 MenuItem displayOptions[] = {
     {"Bckled [ON|OFF]", ACTION, toggleBacklight, nullptr, 0},
-    {"Selector[>|-|c]", SUBMENU, selectChar, nullptr, 0}};
-
-MenuItem selectorOptions[] = {
-    {"Arrow", ACTION, nullptr, nullptr, 0},
-    {"Dash", ACTION, nullptr, nullptr, 0},
-    {"Custom char", ACTION, nullptr, nullptr, 0}};
+    {"Selector[>|-|h]", SUBMENU, nullptr, selectorOptions, 3}};
 
 MenuItem temperatureOptions[] = {
     {"Sensor IN", ACTION, displaySensorIN, nullptr, 0},
@@ -134,7 +147,8 @@ int currentMenuSize = main_menu_size;
 int currentIndex = 0;
 char chosen_selector = '>';
 
-Vector<MenuItem> submenus_stack = {};
+MenuItem submenus_stack[2];
+int submenus_stack_size = 0;
 
 volatile int encoder1 = HIGH;
 volatile int encoder2 = HIGH;
@@ -160,12 +174,19 @@ void display_info(String information)
         waiting_for_input = false;
     }
 
+    lcd.clear();
+    lcd.print(information);
+    lcd.setCursor(0, 1);
+    lcd.print("Back in: ");
+    lcd.print((double)delay_time / 1000, 1);
+    lcd.print("s");
+
     while (delay_time > 0)
     {
-        lcd.clear();
-        lcd.print(information);
-        lcd.setCursor(0, 1);
-        lcd.print("Back in: ");
+        lcd.setCursor(9, 1);
+        lcd.print("           ");
+        lcd.setCursor(9, 1);
+
         lcd.print((double)delay_time / 1000, 1);
         lcd.print("s");
         delay(info_refresh_time);
@@ -195,7 +216,14 @@ void updateDisplay()
     {
         if (i == currentIndex)
         {
-            lcd.print(chosen_selector);
+            if (chosen_selector == 'h')
+            {
+                lcd.write(byte(0));
+            }
+            else
+            {
+                lcd.print(chosen_selector);
+            }
         }
         else
         {
@@ -221,18 +249,24 @@ void setup()
     lcd.init();
     lcd.backlight();
 
+    Serial.begin(9600);
+
     PCICR |= (1 << PCIE1);
     PCMSK1 |= (1 << PCINT10);
+
+    lcd.createChar(0, customChar);
 
     updateDisplay();
 }
 
 void transition_to_main_menu()
 {
-    submenus_stack = {};
+    submenus_stack_size = 0;
+
     currentMenu = mainMenu;
     currentMenuSize = main_menu_size;
     currentIndex = 0;
+
     updateDisplay();
 }
 
@@ -241,7 +275,7 @@ void transition_to_submenu(MenuItem *submenu, int size)
     MenuItem menu = {
         "", SUBMENU, nullptr, currentMenu, currentMenuSize};
 
-    submenus_stack.push_back(menu);
+    submenus_stack[submenus_stack_size] = menu;
 
     currentMenu = submenu;
     currentMenuSize = size;
@@ -262,11 +296,6 @@ void loop()
         en2 = encoder2;
         timestamp = encoder_timestamp;
     }
-
-    lcd.setCursor(0, 0);
-    lcd.print(en1);
-    lcd.print(en2);
-    lcd.print(encoder_timestamp);
 
     if (en1 == LOW && timestamp > last_change_timestamp + DEBOUNCING_PERIOD)
     {
@@ -299,6 +328,7 @@ void loop()
             else if (currentMenu[currentIndex].type == SUBMENU)
             {
                 transition_to_submenu(currentMenu[currentIndex].submenu, currentMenu[currentIndex].submenuSize);
+                submenus_stack_size++;
             }
         }
         while (digitalRead(RED_BUTTON) == LOW)
@@ -312,10 +342,16 @@ void loop()
         delay(DEBOUNCING_PERIOD); // Debounce
         if (digitalRead(GREEN_BUTTON) == LOW)
         {
-            // if (parent_menu != nullptr)
-            //{
-            //     transition_to_submenu(parent_menu, parent_menu_size);
-            // }
+            if (submenus_stack_size > 1)
+            {
+                MenuItem menu = submenus_stack[submenus_stack_size--];
+                transition_to_submenu(menu.submenu, menu.submenuSize);
+            }
+            else if (submenus_stack_size == 1)
+            {
+                submenus_stack_size = 0;
+                transition_to_main_menu();
+            }
         }
 
         while (digitalRead(GREEN_BUTTON) == LOW)
@@ -348,42 +384,117 @@ String toggleLEDPower()
 
 String changeRedIntensity()
 {
-    // Implement red LED intensity change
+    if (digitalRead(LED_RED) == HIGH)
+    {
+        analogWrite(LED_RED, 0);
+        return "Red LED OFF";
+    }
+    else
+    {
+        analogWrite(LED_RED, 255);
+        return "Red LED ON";
+    }
 }
 
 String changeGreenIntensity()
 {
-    // Implement green LED intensity change
+    if (digitalRead(LED_GREEN) == HIGH)
+    {
+        analogWrite(LED_GREEN, 0);
+        return "Green LED OFF";
+    }
+    else
+    {
+        analogWrite(LED_GREEN, 255);
+        return "Green LED ON";
+    }
 }
 
 String changeBlueIntensity()
 {
-    // Implement blue LED intensity change
+    if (digitalRead(LED_BLUE) == HIGH)
+    {
+        analogWrite(LED_BLUE, 0);
+        return "Blue LED OFF";
+    }
+    else
+    {
+        analogWrite(LED_BLUE, 255);
+        return "Blue LED ON";
+    }
 }
+
+bool backlight_state = true;
 
 String toggleBacklight()
 {
-    // Implement backlight toggle
+    backlight_state = !backlight_state;
+    if (backlight_state)
+    {
+        lcd.backlight();
+        return "Backlight ON";
+    }
+    else
+    {
+        lcd.noBacklight();
+        return "Backlight OFF";
+    }
 }
 
-String selectChar()
+String selectChar1()
 {
-    // Implement character selection
+    chosen_selector = '>';
+    updateDisplay();
+
+    return "";
 }
+
+String selectChar2()
+{
+    chosen_selector = '-';
+    updateDisplay();
+
+    return "";
+}
+
+String selectChar3()
+{
+    chosen_selector = 'h';
+    updateDisplay();
+
+    return "";
+}
+
+bool celsius = true;
 
 String displaySensorIN()
 {
-    // Implement sensor IN display
+    if (celsius)
+    {
+        return "15.0C";
+    }
+    else
+    {
+        return "45.0F";
+    }
 }
 
 String displaySensorOUT()
 {
-    // Implement sensor OUT display
+    if (celsius)
+    {
+        return "65.0C";
+    }
+    else
+    {
+        return "95.0F";
+    }
 }
 
 String changeUnits()
 {
-    // Implement unit change
+    celsius = !celsius;
+    return celsius ? "Now using celsius" : "Now using fahrenheit";
 }
 
 String displayAbout()
