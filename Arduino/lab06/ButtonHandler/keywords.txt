@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring Map For ButtonHandler
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+ButtonHandler	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+init	KEYWORD2
+runMeInLoop	KEYWORD2
+begin	KEYWORD2
+set_short_press_callback	KEYWORD2
+set_long_press_callback	KEYWORD2
+handle_interrupt	KEYWORD2
+set_debounce_time	KEYWORD2
+set_long_press_time	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
