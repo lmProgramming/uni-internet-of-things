@@ -35,7 +35,7 @@ void setup()
     lcd.backlight();
     printResults(0, 0UL);
 
-    attachInterrupt(digitalPinToInterrupt(RED_BUTTON), interruptAction, FALLING);
+    attachInterrupt(digitalPinToInterrupt(RED_BUTTON), interruptAction, CHANGE);
 }
 
 void loop()

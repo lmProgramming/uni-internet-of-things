@@ -25,7 +25,8 @@
       "top": 121.4,
       "left": 201.6,
       "attrs": {
-        "color": "red"
+        "color": "red",
+        "key": "1"
       }
     },
     {
@@ -34,7 +35,8 @@
       "top": -22.6,
       "left": 182.4,
       "attrs": {
-        "color": "green"
+        "color": "green",
+        "key": "2"
       }
     },
     {

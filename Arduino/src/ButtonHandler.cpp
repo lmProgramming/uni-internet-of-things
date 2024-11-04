@@ -1,19 +1,5 @@
 #include "ButtonHandler.h"
 
-/*
-Przygotuj własną bibliotekę, która będzie służyła do sterowania przyciskiem podłączonym do Arduino.
-
-Samodzielnie zaprojektuj interfejs programistyczny tej biblioteki, tak aby pozwalała podać, do których pinów podłączony jest przycisk,
-oraz aby pozwalała ustawić wartości konfiguracyjne (np. debounce time, etc.).
-
-Zastanów się nad implementacją w wykorzystaniem przerwać zazmiast aktywnego odpytywania stanu pinu. Biblioteka powinna wspierać obsługę
-krótkiego wciśnięcia przycisku oraz długiego wciśnięcia. Obie operacje uruchmiają inną funkcjonalność, która ma być konfigurowana przez programistę.
-
-Na laboratorium należy zaprezentować działanie biblioteki na obu przyciskach jednocześnie. Rozwiazanie w oparciu o przerwania będzie oceniane wyżej.
-
-Zadbaj o kolorowanie składni w Arduino IDE.
-*/
-
 ButtonHandler *ButtonHandler::instances[2] = {nullptr, nullptr};
 
 ButtonHandler::ButtonHandler(uint8_t pin, unsigned long debounce_time, unsigned long long_press_time)
@@ -24,22 +10,25 @@ ButtonHandler::ButtonHandler(uint8_t pin, unsigned long debounce_time, unsigned 
 void ButtonHandler::begin()
 {
     pinMode(_pin, INPUT_PULLUP);
+    Serial.print("Initializing button on pin: ");
     Serial.println(_pin);
 
     switch (_pin)
     {
     case 2:
         attachInterrupt(digitalPinToInterrupt(_pin), handle_interrupt_1, CHANGE);
-        Serial.println(22);
-
+        Serial.println("Interrupt attached to pin 2");
         ButtonHandler::instances[0] = this;
-        break;
+        return;
     case 4:
+        // no interrupt pin for 4??
         attachInterrupt(digitalPinToInterrupt(_pin), handle_interrupt_2, CHANGE);
-        Serial.println(44);
-
+        Serial.println("Interrupt attached to pin 4");
         ButtonHandler::instances[1] = this;
-        break;
+        return;
+    default:
+        Serial.println("Invalid pin for interrupt");
+        return;
     }
 }
 
