@@ -11,7 +11,7 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// ButtonHandler button1(RED_BUTTON);
+ButtonHandler button1(RED_BUTTON);
 ButtonHandler button2(GREEN_BUTTON);
 
 int button1_short_press_count = 0;
@@ -51,10 +51,10 @@ void setup()
     pinMode(LED_RED, OUTPUT);
     pinMode(LED_BLUE, OUTPUT);
 
-    // button1.begin();
-    // button1.set_short_press_callback(button1_short_press);
-    // button1.set_long_press_callback(button1_long_press);
-    //
+    button1.begin();
+    button1.set_short_press_callback(button1_short_press);
+    button1.set_long_press_callback(button1_long_press);
+
     button2.begin();
     button2.set_short_press_callback(button2_short_press);
     button2.set_long_press_callback(button2_long_press);
@@ -63,11 +63,8 @@ void setup()
     lcd.backlight();
     lcd.clear();
 
-    // ButtonHandler::instances[0]->set_debounce_time(50);
+    ButtonHandler::instances[0]->set_debounce_time(50);
     ButtonHandler::instances[1]->set_debounce_time(250);
-
-    // Serial.println(ButtonHandler::instances[0]->_debounce_time);
-    Serial.println(ButtonHandler::instances[1]->_debounce_time);
 }
 
 void loop()
