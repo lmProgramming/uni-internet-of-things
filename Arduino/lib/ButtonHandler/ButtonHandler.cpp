@@ -17,6 +17,7 @@ static void handle_interrupt_pin_2()
 ISR(PCINT2_vect)
 {
     ButtonHandler::instances[1]->handle_interrupt();
+    Serial.println("Interrupt 2 handled");
 }
 
 void ButtonHandler::begin()
@@ -35,6 +36,7 @@ void ButtonHandler::begin()
     case 4:
         PCICR |= (1 << PCIE2);
         PCMSK2 |= (1 << PCINT20);
+        Serial.println("Interrupt attached to pin 4");
         ButtonHandler::instances[1] = this;
         return;
     default:

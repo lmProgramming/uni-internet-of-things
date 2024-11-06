@@ -347,7 +347,7 @@ void loop()
                 MenuItem menu = submenus_stack[submenus_stack_size--];
                 transition_to_submenu(menu.submenu, menu.submenuSize);
             }
-            else if (submenus_stack_size == 1)
+            if (submenus_stack_size == 1)
             {
                 submenus_stack_size = 0;
                 transition_to_main_menu();
