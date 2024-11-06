@@ -16,18 +16,6 @@ public:
     void set_debounce_time(float new_time);
     void set_long_press_time(float new_time);
 
-    static void handle_interrupt_1()
-    {
-        ButtonHandler::instances[0]->handle_interrupt();
-        Serial.println("Interrupt 1 handled");
-    }
-
-    static void handle_interrupt_2()
-    {
-        ButtonHandler::instances[1]->handle_interrupt();
-        Serial.println("Interrupt 2 handled");
-    }
-
 private:
     uint8_t _pin;
     unsigned long _debounce_time;

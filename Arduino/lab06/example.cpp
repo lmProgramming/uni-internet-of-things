@@ -1,50 +1,55 @@
 #include "ButtonHandler.h"
+#include <LiquidCrystal_I2C.h>
 
-const int BUTTON1_PIN = 2;
-const int BUTTON2_PIN = 3;
-const int LED1_PIN = 13;
-const int LED2_PIN = 12;
+#define RED_BUTTON 2
+#define GREEN_BUTTON 4
 
-ButtonHandler button1(BUTTON1_PIN);
-ButtonHandler button2(BUTTON2_PIN);
+#define DEBOUNCING_PERIOD 100
 
-bool led1_state = false;
-bool led2_state = false;
-unsigned long blink_interval = 500;
-unsigned long last_blink_time = 0;
-bool is_blinking = false;
+#define LED_RED 6
+#define LED_BLUE 3
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+ButtonHandler button1(RED_BUTTON);
+ButtonHandler button2(GREEN_BUTTON);
+
+int button1_short_press_count = 0;
+int button1_long_press_count = 0;
+
+int button2_short_press_count = 0;
+int button2_long_press_count = 0;
 
 void button1_short_press()
 {
-    led1_state = !led1_state;
-    digitalWrite(LED1_PIN, led1_state);
+    button1_short_press_count += 1;
+    digitalWrite(LED_RED, !digitalRead(LED_RED));
 }
 
 void button1_long_press()
 {
-    is_blinking = !is_blinking;
-    if (!is_blinking)
-    {
-        digitalWrite(LED1_PIN, LOW);
-        led1_state = false;
-    }
+    button1_long_press_count += 1;
+    digitalWrite(LED_RED, !digitalRead(LED_RED));
 }
 
 void button2_short_press()
 {
-    led2_state = !led2_state;
-    digitalWrite(LED2_PIN, led2_state);
+    button2_short_press_count += 1;
+    digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
 }
 
 void button2_long_press()
 {
-    blink_interval = (blink_interval == 500) ? 200 : 500;
+    button2_long_press_count += 1;
+    digitalWrite(LED_BLUE, !digitalRead(LED_BLUE));
 }
 
 void setup()
 {
-    pinMode(LED1_PIN, OUTPUT);
-    pinMode(LED2_PIN, OUTPUT);
+    Serial.begin(9600);
+
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
 
     button1.begin();
     button1.set_short_press_callback(button1_short_press);
@@ -53,18 +58,26 @@ void setup()
     button2.begin();
     button2.set_short_press_callback(button2_short_press);
     button2.set_long_press_callback(button2_long_press);
+
+    lcd.init();
+    lcd.backlight();
+    lcd.clear();
+
+    ButtonHandler::instances[0]->set_debounce_time(50);
+    ButtonHandler::instances[1]->set_debounce_time(250);
 }
 
 void loop()
 {
-    if (is_blinking)
-    {
-        unsigned long current_time = millis();
-        if (current_time - last_blink_time >= blink_interval)
-        {
-            led1_state = !led1_state;
-            digitalWrite(LED1_PIN, led1_state);
-            last_blink_time = current_time;
-        }
-    }
+    lcd.setCursor(0, 0);
+    lcd.print("Red S:");
+    lcd.print(button1_short_press_count);
+    lcd.print(" L:");
+    lcd.print(button1_long_press_count);
+
+    lcd.setCursor(0, 1);
+    lcd.print("Grn S:");
+    lcd.print(button2_short_press_count);
+    lcd.print(" L:");
+    lcd.print(button2_long_press_count);
 }

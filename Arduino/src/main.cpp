@@ -80,9 +80,4 @@ void loop()
     lcd.print(button2_short_press_count);
     lcd.print(" L:");
     lcd.print(button2_long_press_count);
-
-    if (digitalRead(GREEN_BUTTON) == LOW)
-    {
-        button2_short_press_count += 10;
-    }
 }

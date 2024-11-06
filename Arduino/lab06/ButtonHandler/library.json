@@ -1,0 +1,21 @@
+{
+    "name": "ButtonHandler",
+    "version": "1.0.0",
+    "description": "A module for handling button presses with debouncing and interrupt support",
+    "keywords": "button, interrupt, arduino",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/uni-internet-of-things"
+    },
+    "authors": [
+        {
+            "name": "lmProgramming",
+            "maintainer": true
+        }
+    ],
+    "dependencies": {
+        "arduino-libraries/Arduino": "*"
+    },
+    "frameworks": "arduino",
+    "platforms": "atmelavr"
+}
