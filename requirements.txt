@@ -1,0 +1,6 @@
+RPi.GPIO
+w1thermsensor
+adafruit-circuitpython-bme280
+paho-mqtt
+Pillow
+neopixel
