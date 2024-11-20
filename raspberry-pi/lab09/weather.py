@@ -13,13 +13,13 @@ proszę obliczyć aktualną wysokość nad poziomem morza.
 '''
 
 
-def ds18b20():
+def ds18b20() -> None:
     sensor = w1thermsensor.W1ThermSensor()
     temp = sensor.get_temperature()
     print(f'\nDS18B200 Temp : {temp} '+chr(176)+'C')
 
 
-def bme280():
+def bme280() -> None:
     i2c = busio.I2C(board.SCL, board.SDA)
     bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c, 0x76)
 
@@ -41,7 +41,7 @@ def bme280():
     print(f'Calculated Altitude: {altitude:0.2f} meters over sea level')
 
 
-def test():
+def test() -> None:
     print('\nThermometers test.')
     ds18b20()
     bme280()
