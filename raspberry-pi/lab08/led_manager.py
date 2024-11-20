@@ -51,11 +51,11 @@ def setup() -> None:
     print(f"Current intensity: {intensity}")
 
 
-def loop():
+def loop() -> None:
     time.sleep(0.1)
 
 
-def main():
+def main() -> None:
     setup()
 
     try:

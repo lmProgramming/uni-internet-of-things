@@ -1,10 +1,16 @@
-#!/usr/bin/env python3
-
 from config import *
 import w1thermsensor
 import board
 import busio
 import adafruit_bme280.advanced as adafruit_bme280
+
+'''
+Wykorzystując treść opisaną w lab09.pdf proszę o wykonanie zadania:
+
+Napisz program, który zmierzy temperaturę, ciśnienie i wilgotność. Wartości te mają się wyświetlać na konsoli. 
+Dodatkowo korzystając z wzoru na wysokość barometryczną (https://ep.com.pl/projekty/projekty-ep/15452-wysokosciomierz-barometryczny) 
+proszę obliczyć aktualną wysokość nad poziomem morza.
+'''
 
 
 def ds18b20():
@@ -29,6 +35,10 @@ def bme280():
     print(f'Humidity: {bme280.humidity:0.1f} %')
     print(f'Pressure: {bme280.pressure:0.1f} hPa')
     print(f'Altitude: {bme280.altitude:0.2f} meters')
+
+    altitude = (44330.0 * (1.0 - pow(bme280.pressure /
+                bme280.sea_level_pressure, 1/5255)))
+    print(f'Calculated Altitude: {altitude:0.2f} meters')
 
 
 def test():
