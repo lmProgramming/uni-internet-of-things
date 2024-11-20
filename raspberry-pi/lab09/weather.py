@@ -38,7 +38,7 @@ def bme280():
 
     altitude = (44330.0 * (1.0 - pow(bme280.pressure /
                 bme280.sea_level_pressure, 1/5255)))
-    print(f'Calculated Altitude: {altitude:0.2f} meters')
+    print(f'Calculated Altitude: {altitude:0.2f} meters over sea level')
 
 
 def test():
