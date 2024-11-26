@@ -8,11 +8,11 @@ from config import *  # pylint: disable=unused-wildcard-import
 from mfrc522 import MFRC522
 
 
-def rfidRead() -> tuple[int, int]:
+def rfid_read() -> tuple[int, int]:
     MIFAREReader = MFRC522()
     counter = 0
     while True:
-        (status, TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
+        (status, _) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
         if status == MIFAREReader.MI_OK:
             (status, uid) = MIFAREReader.MFRC522_Anticoll()
             if status == MIFAREReader.MI_OK:
@@ -28,7 +28,7 @@ def rfidRead() -> tuple[int, int]:
 def test():
     print('\nThe RFID reader test.')
     print('Place the card close to the reader (on the right side of the set).')
-    rfidRead()
+    rfid_read()
     print("The RFID reader tested successfully.")
 
 

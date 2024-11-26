@@ -22,37 +22,36 @@ broker = "localhost"
 # broker = "127.0.0.1"
 # broker = "10.0.0.1"
 
-# The MQTT client.
 client = mqtt.Client()
 
-# Thw main window.
 window = tkinter.Tk()
 
 
 def process_message(client, userdata, message) -> None:
+    topic = message.topic
     # Decode message.
     message_decoded: list[str] = (
         str(message.payload.decode("utf-8"))).split(".")
 
-    # Print message to console.
-    if message_decoded[0] != "Client connected" and message_decoded[0] != "Client disconnected":
-        print(time.ctime() + ", " +
+    if topic == "uid/num":
+        current_time: str = time.ctime()
+        print(current_time + ", " +
               message_decoded[0] + " used the RFID card.")
 
         # Save to sqlite database.
-        connention = sqlite3.connect("workers.db")
-        cursor = connention.cursor()
+        connention: sqlite3.Connection = sqlite3.connect("transactions.db")
+        cursor: sqlite3.Cursor = connention.cursor()
         cursor.execute("INSERT INTO workers_log VALUES (?,?,?)",
                        (time.ctime(), message_decoded[0], message_decoded[1]))
         connention.commit()
         connention.close()
     else:
-        print(message_decoded[0] + " : " + message_decoded[1])
+        print(" ; ".join(message_decoded))
 
 
-def print_log_to_window():
-    connention = sqlite3.connect("workers.db")
-    cursor = connention.cursor()
+def print_log_to_window() -> None:
+    connention: sqlite3.Connection = sqlite3.connect("workers.db")
+    cursor: sqlite3.Cursor = connention.cursor()
     cursor.execute("SELECT * FROM workers_log")
     log_entries = cursor.fetchall()
     labels_log_entry = []
@@ -68,7 +67,6 @@ def print_log_to_window():
     connention.commit()
     connention.close()
 
-    # Display this window.
     print_log_window.mainloop()
 
 
@@ -85,26 +83,25 @@ def create_main_window():
     print_log_button.pack(side="right")
 
 
-def connect_to_broker():
-    # Connect to the broker.
+def connect_to_broker() -> None:
     client.connect(broker)
-    # Send message about conenction.
+
     client.on_message = process_message
-    # Starts client and subscribe.
+
     client.loop_start()
-    client.subscribe("worker/name")
+    client.subscribe("message")
+    client.subscribe("uid/num")
 
 
-def disconnect_from_broker():
-    # Disconnet the client.
+def disconnect_from_broker() -> None:
     client.loop_stop()
     client.disconnect()
 
 
-def run_receiver():
+def run_receiver() -> None:
     connect_to_broker()
     create_main_window()
-    # Start to display window (It will stay here until window is displayed)
+
     window.mainloop()
     disconnect_from_broker()
 

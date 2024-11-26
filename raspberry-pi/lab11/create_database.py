@@ -3,24 +3,23 @@
 import sqlite3
 import time
 import os
-
-database_name = "transactions.db"
+from constants import DATABASE_NAME, TABLE_NAME
 
 
 def create_database():
-    if os.path.exists(database_name):
-        os.remove(database_name)
-        print("An old database removed.")
-    connection = sqlite3.connect(database_name)
+    if os.path.exists(DATABASE_NAME):
+        os.remove(DATABASE_NAME)
+        print("Old database was removed.")
+    connection = sqlite3.connect(DATABASE_NAME)
     cursor = connection.cursor()
-    cursor.execute(""" CREATE TABLE transactions_log (
+    cursor.execute(f""" CREATE TABLE {TABLE_NAME} (
         log_time text,
         uid text,
         num text
     )""")
     connection.commit()
     connection.close()
-    print("The new database created.")
+    print("New database was created.")
 
 
 if __name__ == "__main__":
