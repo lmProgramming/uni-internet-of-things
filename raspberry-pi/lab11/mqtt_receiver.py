@@ -1,6 +1,9 @@
-import paho.mqtt.client as mqtt
-import sqlite3
+#!/usr/bin/env python3
+
 import time
+import sqlite3
+import tkinter
+import paho.mqtt.client as mqtt
 import os
 
 os.environ["DISPLAY"] = "0.0"
@@ -13,42 +16,97 @@ poinformować użytkownika karty, że została ona odczytana.
 Drugi program to klient, który jako subskrybent protokołu MQTT będzie odbierał informacje o użyciu kart RFID i zapisywał
 fakt użycia.'''
 
-# The terminal ID - can be any string.
-terminal_id = "T0"
+
 # The broker name or IP address.
 broker = "localhost"
-#broker = "127.0.0.1"
-#broker = "10.0.0.1"
+# broker = "127.0.0.1"
+# broker = "10.0.0.1"
 
 # The MQTT client.
 client = mqtt.Client()
 
-def call_worker(worker_name):
-    client.publish("worker/name", worker_name + "." + terminal_id,)
+# Thw main window.
+window = tkinter.Tk()
+
+
+def process_message(client, userdata, message):
+    # Decode message.
+    message_decoded = (str(message.payload.decode("utf-8"))).split(".")
+
+    # Print message to console.
+    if message_decoded[0] != "Client connected" and message_decoded[0] != "Client disconnected":
+        print(time.ctime() + ", " +
+              message_decoded[0] + " used the RFID card.")
+
+        # Save to sqlite database.
+        connention = sqlite3.connect("workers.db")
+        cursor = connention.cursor()
+        cursor.execute("INSERT INTO workers_log VALUES (?,?,?)",
+                       (time.ctime(), message_decoded[0], message_decoded[1]))
+        connention.commit()
+        connention.close()
+    else:
+        print(message_decoded[0] + " : " + message_decoded[1])
+
+
+def print_log_to_window():
+    connention = sqlite3.connect("workers.db")
+    cursor = connention.cursor()
+    cursor.execute("SELECT * FROM workers_log")
+    log_entries = cursor.fetchall()
+    labels_log_entry = []
+    print_log_window = tkinter.Tk()
+
+    for log_entry in log_entries:
+        labels_log_entry.append(tkinter.Label(print_log_window, text=(
+            "On %s, %s used the terminal %s" % (log_entry[0], log_entry[1], log_entry[2]))))
+
+    for label in labels_log_entry:
+        label.pack(side="top")
+
+    connention.commit()
+    connention.close()
+
+    # Display this window.
+    print_log_window.mainloop()
+
+
+def create_main_window():
+    window.geometry("250x100")
+    window.title("RECEIVER")
+    label = tkinter.Label(window, text="Listening to the MQTT")
+    exit_button = tkinter.Button(window, text="Stop", command=window.quit)
+    print_log_button = tkinter.Button(
+        window, text="Print log", command=print_log_to_window)
+
+    label.pack()
+    exit_button.pack(side="right")
+    print_log_button.pack(side="right")
 
 
 def connect_to_broker():
     # Connect to the broker.
     client.connect(broker)
     # Send message about conenction.
-    call_worker("Client connected")
-    print("connected to broker")
+    client.on_message = process_message
+    # Starts client and subscribe.
+    client.loop_start()
+    client.subscribe("worker/name")
 
 
 def disconnect_from_broker():
-    # Send message about disconenction.
-    call_worker("Client disconnected")
     # Disconnet the client.
+    client.loop_stop()
     client.disconnect()
 
 
-def run_sender():
+def run_receiver():
     connect_to_broker()
-
-    input()
-
+    create_main_window()
+    # Start to display window (It will stay here until window is displayed)
+    window.mainloop()
     disconnect_from_broker()
 
 
 if __name__ == "__main__":
-    run_sender()
+    run_receiver()
