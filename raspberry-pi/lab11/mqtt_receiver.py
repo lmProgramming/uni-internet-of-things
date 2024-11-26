@@ -29,9 +29,10 @@ client = mqtt.Client()
 window = tkinter.Tk()
 
 
-def process_message(client, userdata, message):
+def process_message(client, userdata, message) -> None:
     # Decode message.
-    message_decoded = (str(message.payload.decode("utf-8"))).split(".")
+    message_decoded: list[str] = (
+        str(message.payload.decode("utf-8"))).split(".")
 
     # Print message to console.
     if message_decoded[0] != "Client connected" and message_decoded[0] != "Client disconnected":

@@ -8,14 +8,6 @@ import rfi
 
 os.environ["DISPLAY"] = "0.0"
 
-'''Proszę przygotować zestaw dwóch programów wykorzystujących protokół MQTT do komunikacji między sobą.
-Pierwszy to program obsługujący czytnik kart RFID. Program ten, jako wydawca (publisher) protokołu MQTT, będzie
-wysyłał informację o identyfikatorze użytej karty i dokładnym czasie jej użycia. Proszę zadbać, aby karta RFID przyłożona
-do czytnika była odczytywana jeden raz, jeśli jest stale przyłożona do czytnika. Proszę sygnałem dźwiękowym i wizualnym
-poinformować użytkownika karty, że została ona odczytana.
-Drugi program to klient, który jako subskrybent protokołu MQTT będzie odbierał informacje o użyciu kart RFID i zapisywał
-fakt użycia.'''
-
 # The terminal ID - can be any string.
 terminal_id = "T0"
 # The broker name or IP address.

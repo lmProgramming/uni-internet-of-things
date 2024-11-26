@@ -1,5 +1,7 @@
 pip install paho-mqtt
 
+cd .\raspberry-pi\lab11 
+
 export DISPLAY=:0.0
 
 do pliku:
