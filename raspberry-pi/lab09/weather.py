@@ -16,7 +16,7 @@ proszę obliczyć aktualną wysokość nad poziomem morza.
 def ds18b20() -> None:
     sensor = w1thermsensor.W1ThermSensor()
     temp = sensor.get_temperature()
-    print(f'\nDS18B200 Temp : {temp} '+chr(176)+'C')
+    print(f'\nDS18B200 Temp : {temp} ' + chr(176)+'C')
 
 
 def bme280() -> None:
@@ -31,24 +31,22 @@ def bme280() -> None:
     bme280.overscan_temperature = adafruit_bme280.OVERSCAN_X2
 
     print('\nBME280:')
-    print(f'Temperature: {bme280.temperature:0.1f} '+chr(176)+'C')
+    print(f'Temperature: {bme280.temperature:0.1f} ' + chr(176)+'C')
     print(f'Humidity: {bme280.humidity:0.1f} %')
     print(f'Pressure: {bme280.pressure:0.1f} hPa')
     print(f'Altitude: {bme280.altitude:0.2f} meters')
 
     altitude = (44330.0 * (1.0 - pow(bme280.pressure /
-                bme280.sea_level_pressure, 1/5255)))
+                bme280.sea_level_pressure, 0.1903)))
     print(f'Calculated Altitude: {altitude:0.2f} meters over sea level')
 
 
 def test() -> None:
-    print('\nThermometers test.')
+    print("Weather Report")
     ds18b20()
     bme280()
     GPIO.cleanup()
 
 
 if __name__ == "__main__":
-    print("\nProgram started")
     test()
-    print("\nProgram finished")
